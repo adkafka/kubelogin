@@ -99,14 +99,14 @@ func (u *Authentication) Do(ctx context.Context, in Input) (*Output, error) {
 	}
 
 	u.Logger.V(1).Infof("initializing an OpenID Connect client")
-	oidcClient, err := u.ClientFactory.New(ctx, in.Provider, in.TLSClientConfig)
+	oidcClient, err := u.ClientFactory.New(ctx, in.Provider, in.TLSClientConfig, in.UseAccessToken)
 	if err != nil {
 		return nil, fmt.Errorf("oidc error: %w", err)
 	}
 
 	if in.CachedTokenSet != nil && in.CachedTokenSet.RefreshToken != "" {
 		u.Logger.V(1).Infof("refreshing the token")
-		tokenSet, err := oidcClient.Refresh(ctx, in.CachedTokenSet.RefreshToken, in.UseAccessToken)
+		tokenSet, err := oidcClient.Refresh(ctx, in.CachedTokenSet.RefreshToken)
 		if err == nil {
 			return &Output{TokenSet: *tokenSet}, nil
 		}

@@ -16,7 +16,6 @@ const keyboardPrompt = "Enter code: "
 type KeyboardOption struct {
 	AuthRequestExtraParams map[string]string
 	RedirectURL            string
-	UseAccessToken         bool
 }
 
 // Keyboard provides the authorization code flow with keyboard interactive.
@@ -59,7 +58,6 @@ func (u *Keyboard) Do(ctx context.Context, o *KeyboardOption, oidcClient client.
 		PKCEParams:  p,
 		Nonce:       nonce,
 		RedirectURI: o.RedirectURL,
-		UseAccessToken: o.UseAccessToken,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not exchange the authorization code: %w", err)

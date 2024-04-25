@@ -38,7 +38,7 @@ type Input struct {
 	GrantOptionSet  authentication.GrantOptionSet
 	TLSClientConfig tlsclientconfig.Config
 	ForceRefresh    bool
-    UseAccessToken  bool
+	UseAccessToken  bool
 }
 
 type GetToken struct {

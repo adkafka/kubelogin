@@ -23,7 +23,6 @@ type BrowserOption struct {
 	AuthRequestExtraParams     map[string]string
 	LocalServerCertFile        string
 	LocalServerKeyFile         string
-	UseAccessToken             bool
 }
 
 // Browser provides the authentication code flow using the browser.

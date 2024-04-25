@@ -16,7 +16,6 @@ const passwordPrompt = "Password: "
 type Option struct {
 	Username       string
 	Password       string // If empty, read a password using Reader.ReadPassword()
-	UseAccessToken bool
 }
 
 // ROPC provides the resource owner password credentials flow.
@@ -41,7 +40,7 @@ func (u *ROPC) Do(ctx context.Context, in *Option, oidcClient client.Interface) 
 			return nil, fmt.Errorf("could not read a password: %w", err)
 		}
 	}
-	tokenSet, err := oidcClient.GetTokenByROPC(ctx, in.Username, in.Password, in.UseAccessToken)
+	tokenSet, err := oidcClient.GetTokenByROPC(ctx, in.Username, in.Password)
 	if err != nil {
 		return nil, fmt.Errorf("resource owner password credentials flow error: %w", err)
 	}

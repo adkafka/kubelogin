@@ -20,10 +20,10 @@ type Interface interface {
 	GetAuthCodeURL(in AuthCodeURLInput) string
 	ExchangeAuthCode(ctx context.Context, in ExchangeAuthCodeInput) (*oidc.TokenSet, error)
 	GetTokenByAuthCode(ctx context.Context, in GetTokenByAuthCodeInput, localServerReadyChan chan<- string) (*oidc.TokenSet, error)
-	GetTokenByROPC(ctx context.Context, username, password string, useAccessToken bool) (*oidc.TokenSet, error)
+	GetTokenByROPC(ctx context.Context, username, password string) (*oidc.TokenSet, error)
 	GetDeviceAuthorization(ctx context.Context) (*oauth2dev.AuthorizationResponse, error)
-	ExchangeDeviceCode(ctx context.Context, authResponse *oauth2dev.AuthorizationResponse, useAccessToken bool) (*oidc.TokenSet, error)
-	Refresh(ctx context.Context, refreshToken string, useAccessToken bool) (*oidc.TokenSet, error)
+	ExchangeDeviceCode(ctx context.Context, authResponse *oauth2dev.AuthorizationResponse) (*oidc.TokenSet, error)
+	Refresh(ctx context.Context, refreshToken string) (*oidc.TokenSet, error)
 	SupportedPKCEMethods() []string
 }
 
@@ -64,6 +64,7 @@ type client struct {
 	logger                      logger.Interface
 	supportedPKCEMethods        []string
 	deviceAuthorizationEndpoint string
+	useAccessToken              bool
 }
 
 func (c *client) wrapContext(ctx context.Context) context.Context {
@@ -93,7 +94,7 @@ func (c *client) GetTokenByAuthCode(ctx context.Context, in GetTokenByAuthCodeIn
 	if err != nil {
 		return nil, fmt.Errorf("oauth2 error: %w", err)
 	}
-	return c.verifyToken(ctx, token, in.Nonce, in.UseAccessToken)
+	return c.verifyToken(ctx, token, in.Nonce)
 }
 
 // GetAuthCodeURL returns the URL of authentication request for the authorization code flow.
@@ -114,7 +115,7 @@ func (c *client) ExchangeAuthCode(ctx context.Context, in ExchangeAuthCodeInput)
 	if err != nil {
 		return nil, fmt.Errorf("exchange error: %w", err)
 	}
-	return c.verifyToken(ctx, token, in.Nonce, in.UseAccessToken)
+	return c.verifyToken(ctx, token, in.Nonce)
 }
 
 func authorizationRequestOptions(n string, p pkce.Params, e map[string]string) []oauth2.AuthCodeOption {
@@ -148,13 +149,13 @@ func (c *client) SupportedPKCEMethods() []string {
 }
 
 // GetTokenByROPC performs the resource owner password credentials flow.
-func (c *client) GetTokenByROPC(ctx context.Context, username, password string, useAccessToken bool) (*oidc.TokenSet, error) {
+func (c *client) GetTokenByROPC(ctx context.Context, username, password string) (*oidc.TokenSet, error) {
 	ctx = c.wrapContext(ctx)
 	token, err := c.oauth2Config.PasswordCredentialsToken(ctx, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("resource owner password credentials flow error: %w", err)
 	}
-	return c.verifyToken(ctx, token, "", useAccessToken)
+	return c.verifyToken(ctx, token, "")
 }
 
 // GetDeviceAuthorization initializes the device authorization code challenge
@@ -168,17 +169,17 @@ func (c *client) GetDeviceAuthorization(ctx context.Context) (*oauth2dev.Authori
 }
 
 // ExchangeDeviceCode exchanges the device to an oidc.TokenSet
-func (c *client) ExchangeDeviceCode(ctx context.Context, authResponse *oauth2dev.AuthorizationResponse, useAccessToken bool) (*oidc.TokenSet, error) {
+func (c *client) ExchangeDeviceCode(ctx context.Context, authResponse *oauth2dev.AuthorizationResponse) (*oidc.TokenSet, error) {
 	ctx = c.wrapContext(ctx)
 	tokenResponse, err := oauth2dev.PollToken(ctx, c.oauth2Config, *authResponse)
 	if err != nil {
 		return nil, fmt.Errorf("device-code: exchange failed: %w", err)
 	}
-	return c.verifyToken(ctx, tokenResponse, "", useAccessToken)
+	return c.verifyToken(ctx, tokenResponse, "")
 }
 
 // Refresh sends a refresh token request and returns a token set.
-func (c *client) Refresh(ctx context.Context, refreshToken string, useAccessToken bool) (*oidc.TokenSet, error) {
+func (c *client) Refresh(ctx context.Context, refreshToken string) (*oidc.TokenSet, error) {
 	ctx = c.wrapContext(ctx)
 	currentToken := &oauth2.Token{
 		Expiry:       time.Now(),
@@ -189,12 +190,12 @@ func (c *client) Refresh(ctx context.Context, refreshToken string, useAccessToke
 	if err != nil {
 		return nil, fmt.Errorf("could not refresh the token: %w", err)
 	}
-	return c.verifyToken(ctx, token, "", useAccessToken)
+	return c.verifyToken(ctx, token, "")
 }
 
 // verifyToken verifies the token with the certificates of the provider and the nonce.
 // If the nonce is an empty string, it does not verify the nonce.
-func (c *client) verifyToken(ctx context.Context, token *oauth2.Token, nonce string, useAccessToken bool) (*oidc.TokenSet, error) {
+func (c *client) verifyToken(ctx context.Context, token *oauth2.Token, nonce string) (*oidc.TokenSet, error) {
 	idToken, ok := token.Extra("id_token").(string)
 	if !ok {
 		return nil, fmt.Errorf("id_token is missing in the token response: %#v", idToken)
@@ -208,7 +209,7 @@ func (c *client) verifyToken(ctx context.Context, token *oauth2.Token, nonce str
 		return nil, fmt.Errorf("nonce did not match (wants %s but got %s)", nonce, verifiedIDToken.Nonce)
 	}
 
-	if useAccessToken {
+	if c.useAccessToken {
 		accessToken, ok := token.Extra("access_token").(string)
 		if !ok {
 			return nil, fmt.Errorf("access_token is missing in the token response: %#v", accessToken)

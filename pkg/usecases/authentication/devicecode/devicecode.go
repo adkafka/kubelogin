@@ -13,7 +13,6 @@ import (
 type Option struct {
 	SkipOpenBrowser bool
 	BrowserCommand  string
-	UseAccessToken  bool
 }
 
 // DeviceCode provides the oauth2 device code flow.
@@ -42,7 +41,7 @@ func (u *DeviceCode) Do(ctx context.Context, in *Option, oidcClient client.Inter
 		return nil, fmt.Errorf("no verification URI in the authorization response")
 	}
 
-	tokenSet, err := oidcClient.ExchangeDeviceCode(ctx, authResponse, in.UseAccessToken)
+	tokenSet, err := oidcClient.ExchangeDeviceCode(ctx, authResponse)
 	u.Logger.V(1).Infof("finished the oauth2 device code flow")
 	if err != nil {
 		return nil, fmt.Errorf("unable to exchange device code: %w", err)
