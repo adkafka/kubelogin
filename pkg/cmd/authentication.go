@@ -101,8 +101,8 @@ func (o *authenticationOptions) grantOptionSet() (s authentication.GrantOptionSe
 		}
 	case o.GrantType == "password" || (o.GrantType == "auto" && o.Username != ""):
 		s.ROPCOption = &ropc.Option{
-			Username: o.Username,
-			Password: o.Password,
+			Username:       o.Username,
+			Password:       o.Password,
 		}
 	case o.GrantType == "device-code":
 		s.DeviceCodeOption = &devicecode.Option{

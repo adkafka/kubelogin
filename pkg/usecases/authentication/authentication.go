@@ -36,6 +36,7 @@ type Input struct {
 	CachedTokenSet  *oidc.TokenSet // optional
 	TLSClientConfig tlsclientconfig.Config
 	ForceRefresh    bool
+	UseAccessToken  bool
 }
 
 type GrantOptionSet struct {
@@ -105,7 +106,7 @@ func (u *Authentication) Do(ctx context.Context, in Input) (*Output, error) {
 
 	if in.CachedTokenSet != nil && in.CachedTokenSet.RefreshToken != "" {
 		u.Logger.V(1).Infof("refreshing the token")
-		tokenSet, err := oidcClient.Refresh(ctx, in.CachedTokenSet.RefreshToken)
+		tokenSet, err := oidcClient.Refresh(ctx, in.CachedTokenSet.RefreshToken, in.UseAccessToken)
 		if err == nil {
 			return &Output{TokenSet: *tokenSet}, nil
 		}
