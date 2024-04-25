@@ -14,8 +14,8 @@ const usernamePrompt = "Username: "
 const passwordPrompt = "Password: "
 
 type Option struct {
-	Username       string
-	Password       string // If empty, read a password using Reader.ReadPassword()
+	Username string
+	Password string // If empty, read a password using Reader.ReadPassword()
 }
 
 // ROPC provides the resource owner password credentials flow.
