@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - support-using-access-token-pr-release
     paths:
       - .github/workflows/release.yaml
       - pkg/**
@@ -17,6 +18,7 @@ on:
       - .github/workflows/release.yaml
       - pkg/**
       - go.*
+  workflow_dispatch:
 
 jobs:
   build:
